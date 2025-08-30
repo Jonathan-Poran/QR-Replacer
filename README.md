@@ -1,10 +1,60 @@
 # QR-Replacer
 
-The idea of the hackathon project QR-Replace is to take an existing image that contains a QR Code and replaces the image with the a correctly oriented QR Code using a python script.
+A FastAPI-based server for handel replacement qr in event ticket imege in supabase , a data base of swapit project
 
-**Dependencies:**
+## Installation
 
-* Pillow https://pypi.python.org/pypi/Pillow/4.0.0
-* qrcode https://pypi.python.org/pypi/qrcode
-* numpy https://pypi.python.org/pypi/numpy/1.12.0rc2
-* scikit https://pypi.python.org/pypi/scikit-learn
+1. Clone the repo:
+
+```bash
+git clone <repo-url>
+cd <repo-folder>
+```
+
+2. Create and activate virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Linux/Mac
+.\.venv\Scripts\activate     # Windows
+```
+
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. (Optional) Deactivate virtual environment when done:
+
+```bash
+deactivate
+```
+
+## Configuration
+
+1. Copy `.env.example` to create your development and production environment files:
+   `.env`
+2. Set server host and port:
+   Edit `.env` to configure the server host and port according to your environment.
+
+## Running the Server
+
+Start the server:
+
+```bash
+python -m src.server
+```
+
+## Tests:
+
+### Run replacement test:
+
+```bash
+python -m src.tests.test_qr_replacement
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |

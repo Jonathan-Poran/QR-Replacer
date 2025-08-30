@@ -1,13 +1,12 @@
 from pathlib import Path
 from PIL import Image
-from QR_replacer import replace_QR
+from src.services import replace_QR
 
 def main():
-
     # --- Paths ---
-    original_image_path = Path("TestImages/NadavEvent.png")
-    new_qr_image_path = Path("TestImages/largeQRcode.png")
-    output_image_path = Path("TestImages/ReplacedQR.png")
+    original_image_path = Path("TestImages/current/ticket.png")
+    new_qr_image_path = Path("TestImages/current/swapit_qr_code.png")
+    output_image_path = Path("TestImages/current/new_ticket.png")
     
     # --- Load images ---
     original_image = Image.open(original_image_path).convert("RGB")

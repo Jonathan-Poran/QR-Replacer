@@ -1,7 +1,10 @@
-fastapi
-uvicorn 
 numpy
 Pillow
 scikit-learn
 opencv-python
 qrcode
+supabase
+fastapi
+uvicorn
+python-dotenv
+pydantic
