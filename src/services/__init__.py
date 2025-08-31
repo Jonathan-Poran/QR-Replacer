@@ -1,1 +1,1 @@
-from .qr_replacer import replace_QR
+from .QR_replacer import replace_QR

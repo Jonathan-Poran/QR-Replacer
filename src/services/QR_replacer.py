@@ -51,6 +51,10 @@ def _detect_qrs_in_image(image_rgb: Image.Image) -> List[np.ndarray]:
     """Return a list of detected QR quadrilaterals as (4,2) array.
     Uses OpenCV's QRCodeDetector. Returns an empty list if none.
     """
+    if cv2 is None:
+        print("cv2 is none")
+        return []
+    
     qr_locations: List[np.ndarray] = []
 
     img_bgr = _rgb_to_bgr_cv(_ensure_rgb(image_rgb))
@@ -145,14 +149,20 @@ def _replace_qr_in_photo(background: Image.Image, new_qr: Image.Image, old_qr_lo
 
     width = x_max - x_min
     height = y_max - y_min
+    scale = 1.05
+    new_width = int(width * scale)
+    new_height = int(height * scale)
 
-    new_qr_resized = new_qr.resize((width, height))
+    new_qr_resized = new_qr.resize((new_width, new_height))
+    center_x = x_min + width // 2
+    center_y = y_min + height // 2
+    paste_x = center_x - new_width // 2
+    paste_y = center_y - new_height // 2
 
     result = background.copy()
-    result.paste(new_qr_resized, (x_min, y_min))
+    result.paste(new_qr_resized, (paste_x, paste_y))
 
     return result
-
 
 # ---------- Public API ----------
 def replace_QR(original_image: Image.Image,
@@ -178,8 +188,12 @@ def replace_QR(original_image: Image.Image,
     original_image = _ensure_rgb(original_image)
     qr_locations = _detect_qrs_in_image(original_image)
 
+    result = original_image.copy()
+
     if not qr_locations or len(qr_locations) == 0:
-        raise RuntimeError("No QR code detected in the image.")
+        print(f"Warning: no QR code detected in the image.")
+        return result
+
     if len(qr_locations) < len(new_qr_images):
         print(f"Warning: Detected {len(qr_locations)} QR code(s) but only {len(new_qr_images)} new QR image(s) provided. Some codes will not be replaced.")
 
@@ -190,7 +204,6 @@ def replace_QR(original_image: Image.Image,
     if not replace_all:
         qr_locations = [qr_locations[0]]
         
-    result = original_image.copy()
 
     for old_qr, new_qr in zip(qr_locations, new_qr_images):
         result = _replace_qr_in_photo(result, new_qr, old_qr)
