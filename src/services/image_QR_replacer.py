@@ -169,6 +169,7 @@ def replace_QR(original_image: Image.Image,
     new_qr_images: List[Image.Image],
     replace_all: bool = False,
     blend_edges: bool = True,
+    num_page: int = 1
 ) -> Image.Image:
     """Detect QR codes in `original_image` and replace with `new_qr_image` by the size order
     Parameters:
@@ -191,7 +192,7 @@ def replace_QR(original_image: Image.Image,
     result = original_image.copy()
 
     if not qr_locations or len(qr_locations) == 0:
-        print(f"Warning: no QR code detected in the image.")
+        print(f"Warning: no QR code detected in image number {num_page}.")
         return result
 
     if len(qr_locations) < len(new_qr_images):

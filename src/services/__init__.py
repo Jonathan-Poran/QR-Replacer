@@ -1,1 +1,2 @@
-from .QR_replacer import replace_QR
+from .image_QR_replacer import replace_QR
+from .pdf_QR_repacer import replace_qr_in_pdf_bytes

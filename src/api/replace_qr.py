@@ -1,50 +1,67 @@
-from PIL import Image
+import requests
+from io import BytesIO
 from fastapi import APIRouter, HTTPException
-from src.services import replace_QR
+from src.services import replace_qr_in_pdf_bytes  # our in-memory PDF function
 from src.config import settings
-from pathlib import Path
 from pydantic import BaseModel
 
 router = APIRouter()
 
 class ReplaceQRRequest(BaseModel):
     ticket_id: str
-    
+
 async def replace_qr_code(request_model: ReplaceQRRequest):
     """
-    Endpoint to replace QR codes in an image associated with a ticket ID.
+    Endpoint to replace QR codes in a PDF associated with a ticket ID.
     """
-    ticket_id = request_model["ticket_id"]
+    ticket_id = request_model.ticket_id
     if not ticket_id:
         raise HTTPException(status_code=400, detail="ticket_id is required")
 
-    # Fetch the image URL from Supabase using the ticket ID 
-    data = settings.supabase.table("ticket_units").select("ticket_image").eq("id", ticket_id).execute()
-    if not data.data or len(data.data) == 0:
+    # Fetch PDF URL from Supabase using ticket ID
+    result = settings.supabase.table("ticket_units").select("ticket_pdf_url").eq("id", ticket_id).execute()
+    if not result.data or len(result.data) == 0:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    image = data.data[0]["ticket_image"]
-    if not image:
-        raise HTTPException(status_code=404, detail="No image found for the provided ticket ID")
-    
+    ticket_pdf_url = result.data[0]["ticket_pdf_url"]
+    if not ticket_pdf_url:
+        raise HTTPException(status_code=404, detail="No PDF URL found for the provided ticket ID")
 
-    base_path = Path(__file__).parent
-    new_qr_image_path = base_path / "swapit_qr_code.png"
-    new_ticket_image = replace_QR(image, [], replace_all=False)
-    new_qr_image = Image.open(new_qr_image_path).convert("RGB")
+    # Download PDF
+    try:
+        response = requests.get(ticket_pdf_url)
+        response.raise_for_status()
+        pdf_bytes = response.content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot access the PDF: {str(e)}")
 
-    new_ticket_image = replace_QR(image, [new_qr_image], replace_all=False)
+    # Replace QR codes in memory
+    try:
+        new_pdf_bytes = replace_qr_in_pdf_bytes(pdf_bytes)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"QR code replacement failed: {str(e)}")
 
-    # Save the modified image locally (or to a temporary location)
-    output_path = base_path / f"replaced_{ticket_id}.png"
-    new_ticket_image.save(output_path)
+    # Upload to Supabase storage
+    bucket_name = "ticket-pdfs"
+    storage_path = f"replaced/replaced_{ticket_id}.pdf"
+    pdf_buffer = BytesIO(new_pdf_bytes)
 
-    response = settings.supabase.table("ticket_units").update({
-        "ticket_image": new_ticket_image
-    }).eq("id", ticket_id).execute() 
-    
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to update the ticket image in the database")
-    
-    return {"message": "QR code replaced successfully", "new_image_path": str(output_path)}
+    try:
+        settings.supabase.storage.from_(bucket_name).upload(
+            path=storage_path,
+            file=pdf_buffer,
+            file_options={"content-type": "application/pdf", "upsert": "true"}
+        )
+        public_url = settings.supabase.storage.from_(bucket_name).get_public_url(storage_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload PDF to Supabase storage: {str(e)}")
 
+    # Update DB with new PDF URL
+    try:
+        settings.supabase.table("ticket_units").update({
+            "ticket_pdf_url": public_url
+        }).eq("id", ticket_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update DB with new PDF URL: {str(e)}")
+
+    return {"message": "QR code replaced successfully", "new_pdf_url": public_url}
