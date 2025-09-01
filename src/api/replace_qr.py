@@ -1,15 +1,31 @@
+# api/replace_qr.py
+import os
 import requests
 from io import BytesIO
-from fastapi import APIRouter, HTTPException
-from src.services import replace_qr_in_pdf_bytes  # our in-memory PDF function
-from src.config import settings, logger
+from fastapi import FastAPI, HTTPException
+from mangum import Mangum
 from pydantic import BaseModel
+# Import your service and logger
+from src.services.pdf_QR_replacer import replace_qr_in_pdf_bytes
+from src.config.logger import logger
+from src.config.settings import get_supabase_client  # adapted to env vars
+from dotenv import load_dotenv
+from supabase import create_client, Client
 
-router = APIRouter()
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Initialize FastAPI app
+app = FastAPI()
 
 class ReplaceQRRequest(BaseModel):
     ticket_id: str
 
+@app.post("/replace_qr")
 async def replace_qr_code(request_model: ReplaceQRRequest):
     """
     Endpoint to replace QR codes in a PDF associated with a ticket ID.
@@ -21,7 +37,7 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
         raise HTTPException(status_code=400, detail="ticket_id is required")
 
     # Fetch PDF URL from Supabase using ticket ID
-    result = settings.supabase.table("ticket_units").select("ticket_pdf_url").eq("id", ticket_id).execute()
+    result = supabase.table("ticket_units").select("ticket_pdf_url").eq("id", ticket_id).execute()
     if not result.data or len(result.data) == 0:
         logger.warning("Ticket not found in Supabase")
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -53,19 +69,19 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
     pdf_buffer = BytesIO(new_pdf_bytes)
 
     try:
-        settings.supabase.storage.from_(bucket_name).upload(
+        supabase.storage.from_(bucket_name).upload(
             path=storage_path,
             file=pdf_buffer,
             file_options={"content-type": "application/pdf", "upsert": "true"}
         )
-        public_url = settings.supabase.storage.from_(bucket_name).get_public_url(storage_path)
+        public_url = supabase.storage.from_(bucket_name).get_public_url(storage_path)
     except Exception as e:
         logger.warning(f"Failed to upload PDF to Supabase storage: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload PDF to Supabase storage: {str(e)}")
 
     # Update DB with new PDF URL
     try:
-        settings.supabase.table("ticket_units").update({
+        supabase.table("ticket_units").update({
             "ticket_pdf_url": public_url
         }).eq("id", ticket_id).execute()
     except Exception as e:
@@ -75,3 +91,6 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
     logger.info(f"QR code replaced successfully, new_pdf_url: {public_url}")
 
     return {"message": "QR code replaced successfully", "new_pdf_url": public_url}
+
+# Wrap FastAPI app with Mangum for serverless
+handler = Mangum(app)
