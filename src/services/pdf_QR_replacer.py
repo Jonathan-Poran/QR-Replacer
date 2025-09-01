@@ -4,8 +4,8 @@ from io import BytesIO
 from src.services import replace_QR
 from pathlib import Path
 
+SWAPIT_QR_PATH = Path(__file__).parent.parent / "assets" / "SWAPIT_QR.png"
 # Fixed QR image path (always the same QR)
-SWAPIT_QR_PATH = Path("/Users/jonathanporan/Documents/GitHub/MTA/Third Year/QR-Replacer/TestImages/swapit_qr_code.png")
 
 def replace_qr_in_pdf_bytes(pdf_bytes: bytes) -> bytes:
     """
@@ -26,7 +26,7 @@ def replace_qr_in_pdf_bytes(pdf_bytes: bytes) -> bytes:
         original_height = int(page.rect.height)
 
         # Render page to high-res image
-        zoom = 5.0
+        zoom = 3.0
         mat = fitz.Matrix(zoom, zoom)
         pix = page.get_pixmap(matrix=mat)
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)

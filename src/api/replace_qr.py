@@ -75,6 +75,7 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
             file_options={"content-type": "application/pdf", "upsert": "true"}
         )
         public_url = supabase.storage.from_(bucket_name).get_public_url(storage_path)
+    
     except Exception as e:
         logger.warning(f"Failed to upload PDF to Supabase storage: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload PDF to Supabase storage: {str(e)}")
@@ -89,7 +90,8 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
         raise HTTPException(status_code=500, detail=f"Failed to update DB with new PDF URL: {str(e)}")
     
     logger.info(f"QR code replaced successfully, new_pdf_url: {public_url}")
-
+    LAST_PDF_URL = public_url
+    
     return {"message": "QR code replaced successfully", "new_pdf_url": public_url}
 
 # Wrap FastAPI app with Mangum for serverless

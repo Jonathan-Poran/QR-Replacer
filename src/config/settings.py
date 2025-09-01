@@ -19,5 +19,8 @@ class Settings:
         self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
         self.supabase = create_client(self.SUPABASE_URL, self.SUPABASE_KEY)
 
+        self.LAST_PDF_URL = os.getenv("LAST_PDF_URL")
+
+
 
 settings = Settings()
