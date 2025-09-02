@@ -57,12 +57,11 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
     # Upload to Supabase storage
     bucket_name = "ticket-pdfs"
     storage_path = f"replaced/replaced_{ticket_id}.pdf"
-    pdf_buffer = BytesIO(new_pdf_bytes)
 
     try:
         supabase.storage.from_(bucket_name).upload(
             path=storage_path,
-            file=pdf_buffer,
+            file=new_pdf_bytes,
             file_options={"content-type": "application/pdf", "upsert": "true"}
         )
         public_url = supabase.storage.from_(bucket_name).get_public_url(storage_path)

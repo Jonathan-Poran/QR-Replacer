@@ -43,7 +43,7 @@ async def home():
         <head><title>QR-Replacer Server</title></head>
         <body>
             <h1>QR-Replacer Server</h1>
-            <p>Status: <strong>UP ✅</strong></p>
+            <p>Status: <strong>UP </strong></p>
             <p>Last converted PDF: <a href="{last_pdf_url}">Download PDF</a></p>
         </body>
     </html>
