@@ -1,6 +1,6 @@
 #services/QR_replacer.py:
-import numpy as np
 from __future__ import annotations
+import numpy as np
 from typing import List
 from PIL import Image
 
