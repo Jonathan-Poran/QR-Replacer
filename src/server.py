@@ -16,6 +16,7 @@ logger.info(f"Starting server (serverless)")
 
 # --- FastAPI app ---
 app = FastAPI()
+app.state.last_pdf_url = None
 
 # --- CORS ---
 app.add_middleware(

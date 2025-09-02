@@ -1,5 +1,5 @@
 # src/api/replace_qr.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 import os, requests
 from io import BytesIO
@@ -17,7 +17,7 @@ class ReplaceQRRequest(BaseModel):
     ticket_id: str
 
 @router.post("/replace_qr")
-async def replace_qr_code(request_model: ReplaceQRRequest):
+async def replace_qr_code(request: Request,request_model: ReplaceQRRequest):
     """
     Endpoint to replace QR codes in a PDF associated with a ticket ID.
     """
@@ -80,6 +80,6 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
         raise HTTPException(status_code=500, detail=f"Failed to update DB with new PDF URL: {str(e)}")
     
     logger.info(f"QR code replaced successfully, new_pdf_url: {public_url}")
-    router.app.state.last_pdf_url = public_url
+    request.app.state.last_pdf_url = public_url
     return {"message": "QR code replaced successfully", "new_pdf_url": public_url}
     
