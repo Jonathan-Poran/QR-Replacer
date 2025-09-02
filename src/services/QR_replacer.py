@@ -1,6 +1,7 @@
+#services/QR_replacer.py:
+import numpy as np
 from __future__ import annotations
 from typing import List
-import numpy as np
 from PIL import Image
 
 # OpenCV is used for QR detection + perspective warps.

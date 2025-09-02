@@ -1,9 +1,8 @@
+# server.py:
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from mangum import Mangum
-from pathlib import Path
 
 # Import your modules
 from src.api import register_routes
@@ -30,21 +29,22 @@ app.add_middleware(
 # --- Register routes ---
 register_routes(app)
 
-# --- Minimal frontend ---
-LAST_PDF_URL = os.getenv("LAST_PDF_URL", "#")  # use Supabase link in production
+app.state.last_pdf_url = "#"
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
     """
     Simple HTML page showing server status and last PDF.
     """
+    last_pdf_url = app.state.last_pdf_url
+
     html_content = f"""
     <html>
         <head><title>QR-Replacer Server</title></head>
         <body>
             <h1>QR-Replacer Server</h1>
             <p>Status: <strong>UP ✅</strong></p>
-            <p>Last converted PDF: <a href="{LAST_PDF_URL}">Download PDF</a></p>
+            <p>Last converted PDF: <a href="{last_pdf_url}">Download PDF</a></p>
         </body>
     </html>
     """
@@ -54,5 +54,3 @@ async def home():
 async def health_check():
     return {"status": "Server is running"}
 
-# --- Wrap app for Vercel serverless ---
-handler = Mangum(app)

@@ -1,31 +1,22 @@
-# api/replace_qr.py
-import os
-import requests
-from io import BytesIO
-from fastapi import FastAPI, HTTPException
-from mangum import Mangum
+# src/api/replace_qr.py
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-# Import your service and logger
+import os, requests
+from io import BytesIO
 from src.services.pdf_QR_replacer import replace_qr_in_pdf_bytes
 from src.config.logger import logger
-from src.config.settings import get_supabase_client  # adapted to env vars
-from dotenv import load_dotenv
 from supabase import create_client, Client
-
-load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Initialize FastAPI app
-app = FastAPI()
+router = APIRouter()
 
 class ReplaceQRRequest(BaseModel):
     ticket_id: str
 
-@app.post("/replace_qr")
+@router.post("/replace_qr")
 async def replace_qr_code(request_model: ReplaceQRRequest):
     """
     Endpoint to replace QR codes in a PDF associated with a ticket ID.
@@ -90,9 +81,6 @@ async def replace_qr_code(request_model: ReplaceQRRequest):
         raise HTTPException(status_code=500, detail=f"Failed to update DB with new PDF URL: {str(e)}")
     
     logger.info(f"QR code replaced successfully, new_pdf_url: {public_url}")
-    LAST_PDF_URL = public_url
-    
+    router.app.state.last_pdf_url = public_url
     return {"message": "QR code replaced successfully", "new_pdf_url": public_url}
-
-# Wrap FastAPI app with Mangum for serverless
-handler = Mangum(app)
+    
