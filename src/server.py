@@ -55,5 +55,8 @@ async def home():
 async def health_check():
     return {"status": "Server is running with new code"}
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "QR Replacer API running"}
 
 ####################################################
