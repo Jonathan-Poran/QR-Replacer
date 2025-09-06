@@ -73,7 +73,8 @@ async def replace_qr_code(request: Request,request_model: ReplaceQRRequest):
     # Update DB with new PDF URL
     try:
         supabase.table("ticket_units").update({
-            "ticket_pdf_url": public_url
+            "ticket_pdf_url": public_url,
+            "original_pdf_url": ticket_pdf_url
         }).eq("id", ticket_id).execute()
     except Exception as e:
         logger.warning(f"Failed to update DB with new PDF URL: {str(e)}")
